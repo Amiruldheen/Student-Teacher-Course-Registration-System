@@ -1,6 +1,8 @@
 from rest_framework import serializers
 # from rest_framework.serializers import ModelSerializer
-from app_edu_enroll.models import Teacher
+from app_edu_enroll.models import Teacher, Student, Course
+from fuzzywuzzy import fuzz
+from nltk.tokenize import word_tokenize
 
 # class TeacherSerializer(serializers.Serializer):
 #     id = serializers.IntegerField(read_only=True)
@@ -19,25 +21,69 @@ from app_edu_enroll.models import Teacher
 #         instance.save()
 #         return instance
 
+class CourseSerializer(serializers.ModelSerializer):
+    teacher_name = serializers.CharField(source="teacher.name", required=False) #forward travers Course.teacher.name
+
+    class Meta:
+        model = Course
+        fields = ['id', 'title', 'description', 'teacher', 'teacher_name']
+
 
 class TeacherSerializer(serializers.ModelSerializer):
     email_length = serializers.SerializerMethodField()
+    name_fuzz = serializers.SerializerMethodField()
+    name_tokenize = serializers.SerializerMethodField()
+    courses_teaching = CourseSerializer(source="teacher_courses", many=True, required=False) #nested serializer using related name
 
     class Meta:
         model = Teacher
-        fields = ['id', 'name', 'email', 'name_length', 'email_length']
+        fields = ['id', 'name', 'email', 'name_length', 'email_length', 'name_fuzz', 'name_tokenize', 'courses_teaching']
         extra_kwargs = {'id':{'read_only': True},'name_length':{'read_only': True}}
 
-    def validate(self, name):
+    # def validate(self, name):
 
-        if len(name)<3:
-            raise serializers.ValidationError("Name should be morethan 3 characters")
-        return name
+    #     if len(name)<3:
+    #         print(len(name))
+    #         raise serializers.ValidationError("Name should be morethan 3 characters")
+    #     return name
     
     def get_email_length(self, obj):
         return len(obj.email)
+    
+    def get_name_fuzz(self, obj):
+        return fuzz.ratio(obj.name, "Ashok Revathi")
+    
+    def get_name_tokenize(self, obj):
+        return word_tokenize(obj.name)
+    
+    def to_internal_value(self, data):
+        #runs second and returns validated data
+        data["name"] = data["name"] + "Kumar"
+        print("Inside internal value")
+        return super().to_internal_value(data)
+    
+    def run_validation(self, data):
+        #runs first
+        print("Inside run validation")
+
+        return super().run_validation(data)
+    
+    def to_representation(self, instance):
+        print("Inside te repr")
+
+        ret = super().to_representation(instance)
+        ret['name'] = ret['name'].upper()
+        return ret
+    
 
 
+
+
+class StudentSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Student
+        fields = ['id', 'name', 'age','email', 'course']
 
 
 
