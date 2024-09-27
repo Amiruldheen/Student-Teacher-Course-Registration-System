@@ -23,6 +23,7 @@ from nltk.tokenize import word_tokenize
 
 class CourseSerializer(serializers.ModelSerializer):
     teacher_name = serializers.CharField(source="teacher.name", required=False) #forward travers Course.teacher.name
+    # teacher = serializers.PrimaryKeyRelatedField(queryset=Teacher.objects.all())
 
     class Meta:
         model = Course
@@ -80,7 +81,8 @@ class TeacherSerializer(serializers.ModelSerializer):
 
 
 class StudentSerializer(serializers.ModelSerializer):
-
+    # course = serializers.PrimaryKeyRelatedField(queryset=Course.objects.all(), many=True)
+    # course = CourseSerializer()
     class Meta:
         model = Student
         fields = ['id', 'name', 'age','email', 'course']
